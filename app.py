@@ -19,9 +19,13 @@ from dotenv import load_dotenv
 load_dotenv()
 API_KEY = os.getenv("GEMINI_API_KEY")
 
+# O Google desliga modelos antigos de tempos em tempos (o gemini-1.5-flash já saiu do ar).
+# Por isso o modelo vem do .env; se este também for desligado, basta trocar GEMINI_MODEL.
+MODEL_NAME = os.getenv("GEMINI_MODEL", "gemini-3.6-flash")
+
 # --- CAMADAS DE SEGURANÇA ---
 
-def is_query_safe(sql_query: str) -> bool:
+def is_query_safe(sql_query: str) -> tuple[bool, str]:
     """
     Camada de Segurança 1: Validação baseada em RegEx (Python-side)
     Verifica se a query gerada tenta executar comandos perigosos.
@@ -70,12 +74,12 @@ def execute_read_only_query(sql_query: str):
 
 def generate_sql_from_text(api_key: str, question: str) -> str:
     """
-    Gera a query SQL a partir da pergunta natural usando o modelo gemini-2.5-flash.
+    Gera a query SQL a partir da pergunta natural usando um modelo Flash do Gemini (MODEL_NAME).
     Inclui regras estritas de Prompt Engineering para evitar comportamentos inesperados.
     """
     genai.configure(api_key=api_key)
-    # gemini-2.5-flash é rápido e eficiente para esse tipo de tarefa de raciocínio lógico (text-to-sql)
-    model = genai.GenerativeModel("gemini-1.5-flash")
+    # Modelos Flash são rápidos e baratos para esse tipo de tarefa (text-to-SQL)
+    model = genai.GenerativeModel(MODEL_NAME)
     
     schema_info = """
     Tabelas no banco de dados SQLite 'sales.db':
